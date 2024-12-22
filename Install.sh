@@ -54,40 +54,84 @@ cleanup() {
   print_message "Temporary files cleaned up."
 }
 
-# Declare package lists
-# Add your pacman packages here
-declare -a pacman_packages=(
-    "git" #SHOULD BE INSTALLED IF THIS SHELL SCRIPT IS RUNNING
-    "base-devel"
-    "networkmanager"
-    "sddm"
-    "kitty"
-    "rofi"
-    "fish"
-    "firefox"
-    "hyprland"
-    #"qt5ct"
-    #"qt6ct"
-    #"kvantum"
-    "btop"
-    "code"
-    "spotify"
-    "fastfetch"
-    "wlogout"
-    "swaylock"
-    "dolphin" #RANGER??
-    "unzip"
-    "steam"
-    "heroic-games-launcher"
-    "obsidian"
 
-    )
+# Function to install Eucalyptus Drop theme for SDDM
+install_theme() {
+  local theme_name="Eucalyptus-Drop"
+  local themes_dir="/usr/share/sddm/themes"
+  local repo_url="https://gitlab.com/Matt.Jolly/sddm-eucalyptus-drop.git"
+  local temp_dir="/tmp/eucalyptus_drop_theme"
 
-# Add your AUR packages here
-declare -a aur_packages=(
-    "7-zip-full"
-    )
+  print_stage_message "Installing Eucalyptus Drop theme for SDDM..."
 
+  # Create a temporary directory
+  mkdir -p "$temp_dir"
+  
+  # Clone the Git repository
+  print_message "Cloning Eucalyptus Drop theme repository..."
+  if git clone "$repo_url" "$temp_dir"; then
+    # Copy theme to SDDM themes directory
+    if [[ -d "$temp_dir" ]]; then
+      sudo mkdir -p "$themes_dir/$theme_name"
+      sudo cp -r "$temp_dir"/* "$themes_dir/$theme_name/"
+      print_message "Theme installed to $themes_dir/$theme_name."
+
+      # Update SDDM configuration to use the new theme
+      print_message "Setting Eucalyptus Drop as the default SDDM theme..."
+      sudo sed -i "s/^Current=.*/Current=$theme_name/" /etc/sddm.conf || {
+        echo "[Theme]" | sudo tee -a /etc/sddm.conf
+        echo "Current=$theme_name" | sudo tee -a /etc/sddm.conf
+      }
+      print_message "Eucalyptus Drop theme set as the default."
+    else
+      print_message "Failed to copy Eucalyptus Drop theme. Directory not found."
+    fi
+  else
+    print_message "Failed to clone Eucalyptus Drop theme repository."
+  fi
+
+  # Cleanup
+  rm -rf "$temp_dir"
+  print_message "Temporary files cleaned up."
+}
+
+# Function to copy Hyprland and wlogout configurations
+copy_configs() {
+  local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local source_dir="$script_dir" # Use the folder containing the script
+  local hyprland_config_dir="$HOME/.config/hypr"
+  local wlogout_config_dir="$HOME/.config/wlogout"
+
+  print_stage_message "Copying Hyprland and wlogout configurations..."
+
+  # Copy Hyprland configuration
+  if [[ -d "$source_dir/hypr" ]]; then
+    if [[ -d "$hyprland_config_dir" ]]; then
+      local backup_dir="$hyprland_config_dir.bak_$(date +%Y%m%d%H%M%S)"
+      cp -r "$hyprland_config_dir" "$backup_dir"
+      print_message "Existing Hyprland config backed up to $backup_dir."
+    fi
+    mkdir -p "$hyprland_config_dir"
+    cp -r "$source_dir/hypr/"* "$hyprland_config_dir/"
+    print_message "Hyprland configuration copied to $hyprland_config_dir."
+  else
+    print_message "Hyprland configuration source directory not found. Skipping."
+  fi
+
+  # Copy wlogout configuration
+  if [[ -d "$source_dir/wlogout" ]]; then
+    if [[ -d "$wlogout_config_dir" ]]; then
+      local backup_dir="$wlogout_config_dir.bak_$(date +%Y%m%d%H%M%S)"
+      cp -r "$wlogout_config_dir" "$backup_dir"
+      print_message "Existing wlogout config backed up to $backup_dir."
+    fi
+    mkdir -p "$wlogout_config_dir"
+    cp -r "$source_dir/wlogout/"* "$wlogout_config_dir/"
+    print_message "wlogout configuration copied to $wlogout_config_dir."
+  else
+    print_message "wlogout configuration source directory not found. Skipping."
+  fi
+}
 
 # Add Chaotic-AUR repository if not already added
 add_chaotic_aur() {
@@ -122,6 +166,45 @@ install_yay() {
   fi
 }
 
+
+# Declare package lists
+# Add your pacman packages here
+declare -a pacman_packages=(
+    "git" #SHOULD BE INSTALLED IF THIS SHELL SCRIPT IS RUNNING
+    "base-devel"
+    "networkmanager"
+    "sddm"
+    "kitty"
+    "rofi"
+    "fish"
+    "firefox"
+    "hyprland"
+    "qt5ct"
+    "qt6ct"
+    "kvantum"
+    "btop"
+    "code"
+    "wl-clipboard"
+    "cliphist"
+    "spotify"
+    "fastfetch"
+    "wlogout"
+    "swaylock"
+    "dolphin"
+    "ranger"
+    "vim"
+    "unzip"
+    "steam"
+    "heroic-games-launcher"
+    "obsidian"
+    )
+
+# Add your AUR packages here
+declare -a aur_packages=(
+    "7-zip-full"
+    "hyprland-qtutils"
+    "vesktop"
+    )
 
 # Main script logic
 main() {
@@ -176,10 +259,9 @@ main() {
     fi
     sleep 0.6
     
-    #ADD HYPRLAND CONFIGS HERE IF HYPRLAND IS INSTALLED (MAYBE AUTO INSTALL HYPRLAND??)
-    #Move repo ./config/hypr to ~/.config/hypr
-    #also move wlogout config file ~/.config/wlogout
+    install_theme
 
+    copy_configs
 
     #Enable Necessary services
     enable_services
@@ -189,6 +271,7 @@ main() {
 
     # All Tasks completed
     print_stage_message "All tasks completed successfully!"
+    print_stage_message "Now you can install hyprpanel"
 }
 
 # Run the main function
