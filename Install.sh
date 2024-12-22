@@ -205,6 +205,7 @@ declare -a aur_packages=(
     "7-zip-full"
     "hyprland-qtutils"
     "vesktop"
+    "qimgv-git"
     )
 
 # Main script logic
