@@ -194,6 +194,7 @@ declare -a pacman_packages=(
     "ranger"
     "vim"
     "unzip"
+    "cava"
     "steam"
     "heroic-games-launcher"
     "obsidian"
