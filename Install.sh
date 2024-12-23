@@ -22,7 +22,7 @@ install_package() {
   local package=$1
   if ! is_installed "$package"; then
     print_message "Installing $package..."
-    sudo pacman -S "$package" --noconfrim
+    sudo pacman -S "$package" --noconfirm
   else
     print_message "$package is already installed. Skipping."
   fi
